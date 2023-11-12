@@ -5,34 +5,68 @@
 #include <vector>
 #include <ranges>
 #include <fstream>
+#include <sstream>
+#include <optional>
+#include <algorithm>
 
 using Chapter = std::vector<std::string>;
 using Tolstoy = std::vector<Chapter>;
 
 
-auto read_file = [](const auto file_path){
-    Tolstoy content;
+auto fileStream = [](const std::string& fileName) -> std::optional<Tolstoy>
+{
+    std::ifstream file(fileName);
 
-    std::ifstream input_file(file_path);
-    if (!input_file.is_open()){
-        return content;
+    if (!file.is_open())
+    {
+        return std::nullopt;
     }
 
-    std::string line;
-    Chapter current_chapter;
-    bool intro = true;
+    std::vector<std::string> words((std::istream_iterator<std::string>(file)), std::istream_iterator<std::string>());
+    file.close();
 
-    while (getline(input_file, line)){
-        if (line.substr(0, 7) == "CHAPTER" || line.substr(0, 7) == "*** END"){
-            if (!intro){
-                content.push_back(current_chapter);
+    Tolstoy chapters;
+    Chapter currentChapter;
+    std::string currentLine;
+    bool lastChapterEnded = false;
+
+    std::for_each(words.begin(), words.end(), [&](const std::string& word) 
+    {
+        if (word == "***" && currentLine.find("END OF THE PROJECT GUTENBERG EBOOK") != std::string::npos) 
+        {
+            lastChapterEnded = true;
+
+            if (!currentChapter.empty()) 
+            {
+                chapters.push_back(currentChapter);
+                currentChapter.clear();
             }
-            intro = false;
-            current_chapter.clear();
-        }
-        current_chapter.push_back(line);
-    }
 
-    input_file.close();
-    return content;
+            return;
+        }
+        
+        if (lastChapterEnded) 
+        {
+            return;
+        }
+
+        if (word.rfind("CHAPTER", 0) == 0) 
+        {
+            if (!currentChapter.empty()) 
+            {
+                chapters.push_back(currentChapter);
+                currentChapter.clear();
+            }
+        }
+
+        currentLine += word + " ";
+
+        if (word.back() == '.') 
+        {
+            currentChapter.push_back(currentLine);
+            currentLine.clear();
+        }
+    });
+
+    return std::make_optional(chapters);
 };
