@@ -4,20 +4,27 @@
 #include <numeric>
 #include <vector>
 #include <ranges>
-#include "read_file.cpp"
+#include "process_file.cpp"
 
-int main (){
-    std::optional<Tolstoy> tolstoy = fileStream("war_and_peace.txt");
+int main() {
+    auto lines = readFileLines("war_and_peace.txt");
 
-    if (tolstoy.has_value()) {
-        for (const auto& chapter : tolstoy.value()) {
-            for (const auto& line : chapter) {
-                std::cout << line << std::endl;
+    if (!lines.has_value()) {
+        std::cerr << "File could not be opened or read." << std::endl;
+        return 1;
+    }
+
+    auto tolstoy = processLinesToChapters(lines.value());
+
+    for (const auto& chapter : tolstoy) {
+        for (const auto& line : chapter) {
+            for (const auto& word : line) {
+                std::cout << word << ' ';
             }
+            std::cout << std::endl;
         }
-    } else {
-        std::cerr << "File Stream Error..." << std::endl;
     }
 
     return 0;
 }
+
