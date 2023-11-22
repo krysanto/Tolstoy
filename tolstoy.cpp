@@ -6,19 +6,24 @@
 #include <ranges>
 #include "process_file.cpp"
 
-int main() {
+int main()
+{
     auto lines = readFileLines("war_and_peace.txt");
 
-    if (!lines.has_value()) {
+    if (!lines.has_value())
+    {
         std::cerr << "File could not be opened or read." << std::endl;
         return 1;
     }
 
     auto tolstoy = processLinesToChapters(lines.value());
 
-    for (const auto& chapter : tolstoy) {
-        for (const auto& line : chapter) {
-            for (const auto& word : line) {
+    for (const auto &chapter : tolstoy)
+    {
+        for (const auto &line : chapter)
+        {
+            for (const auto &word : line)
+            {
                 std::cout << word << ' ';
             }
             std::cout << std::endl;
@@ -27,4 +32,3 @@ int main() {
 
     return 0;
 }
-

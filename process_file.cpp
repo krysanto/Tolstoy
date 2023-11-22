@@ -12,12 +12,12 @@
 using Chapter = std::vector<std::vector<std::string>>; // inner vector -> tokenized line
 using Tolstoy = std::vector<Chapter>;
 
-auto isNewChapter = [](const std::string& line) 
+auto isNewChapter = [](const std::string &line)
 {
     return line.rfind("CHAPTER", 0) == 0;
 };
 
-auto tokenize = [](const std::string& str) -> std::vector<std::string> 
+auto tokenize = [](const std::string &str) -> std::vector<std::string>
 {
     std::istringstream iss(str);
     std::vector<std::string> tokens{std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{}};
@@ -25,9 +25,10 @@ auto tokenize = [](const std::string& str) -> std::vector<std::string>
     return tokens;
 };
 
-
-auto processLinesToChapters = [](const std::vector<std::string>& lines) -> Tolstoy {
-    return std::accumulate(lines.begin(), lines.end(), Tolstoy(), [&](Tolstoy acc, const std::string& line) -> Tolstoy {
+auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolstoy
+{
+    return std::accumulate(lines.begin(), lines.end(), Tolstoy(), [&](Tolstoy acc, const std::string &line) -> Tolstoy
+                           {
         if (isNewChapter(line)) {
             Chapter newChapter;
             newChapter.push_back(tokenize(line)); // Start new chapter with tokenized line
@@ -35,13 +36,13 @@ auto processLinesToChapters = [](const std::vector<std::string>& lines) -> Tolst
         } else if (!acc.empty()) {
             acc.back().push_back(tokenize(line)); // Tokenize line and add to current chapter
         }
-        return acc;
-    });
+        return acc; });
 };
 
-auto readFileLines = [](const std::string& fileName) -> std::optional<std::vector<std::string>> {
+auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>
+{
     std::ifstream file(fileName);
-    if (!file.is_open()) 
+    if (!file.is_open())
     {
         return std::nullopt;
     }
@@ -49,13 +50,10 @@ auto readFileLines = [](const std::string& fileName) -> std::optional<std::vecto
     std::vector<std::string> lines;
     std::copy(std::istream_iterator<std::string>(file), std::istream_iterator<std::string>(), std::back_inserter(lines));
 
-    // funkt ned
-    auto end_marker = std::find_if(lines.begin(), lines.end(), [](const std::string& line) 
-    {
-        return line.find("*** END OF THE PROJECT GUTENBERG EBOOK, WAR AND PEACE ***") != std::string::npos;
-    });
+    auto end_marker = std::find_if(lines.begin(), lines.end(), [](const std::string &line)
+                                   { return line.find("END") != std::string::npos; });
 
-    if (end_marker != lines.end()) 
+    if (end_marker != lines.end())
     {
         lines.erase(end_marker, lines.end());
     }
