@@ -28,15 +28,20 @@ auto tokenize = [](const std::string &str) -> std::vector<std::string>
 auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolstoy
 {
     return std::accumulate(lines.begin(), lines.end(), Tolstoy(), [&](Tolstoy acc, const std::string &line) -> Tolstoy
-                           {
-        if (isNewChapter(line)) {
+    {
+        if (isNewChapter(line)) 
+        {
             Chapter newChapter;
             newChapter.push_back(tokenize(line)); // Start new chapter with tokenized line
             acc.push_back(newChapter);
-        } else if (!acc.empty()) {
+        } 
+        else if (!acc.empty()) 
+        {
             acc.back().push_back(tokenize(line)); // Tokenize line and add to current chapter
         }
-        return acc; });
+
+        return acc; 
+    });
 };
 
 auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>
@@ -51,7 +56,9 @@ auto readFileLines = [](const std::string &fileName) -> std::optional<std::vecto
     std::copy(std::istream_iterator<std::string>(file), std::istream_iterator<std::string>(), std::back_inserter(lines));
 
     auto end_marker = std::find_if(lines.begin(), lines.end(), [](const std::string &line)
-                                   { return line.find("END") != std::string::npos; });
+    {
+        return line.find("END") != std::string::npos;
+    });
 
     if (end_marker != lines.end())
     {
