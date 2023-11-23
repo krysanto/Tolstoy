@@ -8,9 +8,11 @@
 #include <sstream>
 #include <optional>
 #include <algorithm>
+#include <map>
 
 using Chapter = std::vector<std::vector<std::string>>; // inner vector -> tokenized line
 using Tolstoy = std::vector<Chapter>;
+using Terms = std::map<std::string, bool>;
 
 auto isNewChapter = [](const std::string &line)
 {
@@ -42,6 +44,19 @@ auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolst
 
         return acc; 
     });
+};
+
+auto processTerms = [](const std::vector<std::string> inputTerms)
+{
+    return [&inputTerms](const bool isWarTerm) -> Terms
+    {
+        return std::accumulate(inputTerms.begin(), inputTerms.end(), Terms(), [&] (Terms acc, const std::string inputTerm) -> Terms
+        {
+            acc.insert({inputTerm, isWarTerm});
+            return acc;
+        });
+        
+    };
 };
 
 auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>
