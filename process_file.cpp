@@ -53,9 +53,9 @@ auto processTerms = [](const std::vector<std::string> inputTerms)
         return std::accumulate(inputTerms.begin(), inputTerms.end(), Terms(), [&] (Terms acc, const std::string inputTerm) -> Terms
         {
             acc.insert({inputTerm, isWarTerm});
+
             return acc;
         });
-        
     };
 };
 

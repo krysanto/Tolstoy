@@ -17,20 +17,20 @@ auto filterWords = [](const Chapter currentChapter)
 
 int main()
 {
-    auto lines = readFileLines("war_and_peace.txt");
-    auto peace = readFileLines("peace_terms.txt");
-    auto war = readFileLines("war_terms.txt");
+    std::optional<std::vector<std::string>> lines = readFileLines("war_and_peace.txt");
+    std::optional<std::vector<std::string>> peace = readFileLines("peace_terms.txt");
+    std::optional<std::vector<std::string>> war = readFileLines("war_terms.txt");
 
 
     if (!lines.has_value() || !peace.has_value() || !war.has_value())
     {
-        std::cerr << "File could not be opened or read." << std::endl;
+        std::cerr << "One or more files could not be opened or read." << std::endl;
         return 1;
     }
 
     Tolstoy tolstoy = processLinesToChapters(lines.value());
-    Terms peace_map = processTerms(peace.value());
-    Terms war_map = processTerms(war.value());
+    Terms peace_map = processTerms(peace.value())(false);
+    Terms war_map = processTerms(war.value())(true);
 /*
     for (const auto &chapter : tolstoy)
     {
@@ -45,6 +45,10 @@ int main()
     }
 */
     for (auto &[k, v] : peace_map){
+        std::cout << k << "   " << v << std::endl;
+    }
+
+    for (auto &[k, v] : war_map){
         std::cout << k << "   " << v << std::endl;
     }
     return 0;
