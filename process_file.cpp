@@ -145,7 +145,16 @@ auto calculateTermDensity = [](const Chapter& chapter, const Terms& terms) -> do
     double totalDistance = std::accumulate(distances.first.begin(), distances.first.end(), 0.0);
     double averageDistance = distances.first.empty() ? 0.0 : totalDistance / distances.first.size();
 
-    return averageDistance;
+    // Calculate term frequency
+    auto counts = std::count_if(words.begin(), words.end(),
+        [&terms](const std::string& word) {
+            return terms.find(word) != terms.end();
+        });
+
+    // Normalize average distance by term frequency
+    double termDensity = counts == 0 ? 0.0 : 1.0 / averageDistance;
+
+    return termDensity;
 };
 
 auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>
