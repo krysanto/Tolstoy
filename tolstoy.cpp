@@ -31,6 +31,18 @@ int main()
     Tolstoy tolstoy = processLinesToChapters(lines.value());
     Terms peace_map = processTerms(peace.value())(false);
     Terms war_map = processTerms(war.value())(true);
+
+    std::vector<WordCount> chaptersWordCounts = processChapters(tolstoy, war_map, peace_map);
+
+    // Print the word counts for each chapter
+    for (size_t chapterIndex = 0; chapterIndex < chaptersWordCounts.size(); ++chapterIndex) {
+        const auto& wordCount = chaptersWordCounts[chapterIndex];
+        std::cout << "Word counts for Chapter " << (chapterIndex + 1) << ":\n";
+        for (const auto& [word, count] : wordCount) {
+            std::cout << "  " << word << ": " << count << '\n';
+        }
+    }
+
 /*
     for (const auto &chapter : tolstoy)
     {
@@ -43,7 +55,7 @@ int main()
             std::cout << std::endl;
         }
     }
-*/
+
     for (auto &[k, v] : peace_map){
         std::cout << k << "   " << v << std::endl;
     }
@@ -51,6 +63,7 @@ int main()
     for (auto &[k, v] : war_map){
         std::cout << k << "   " << v << std::endl;
     }
+*/
     return 0;
 }
 

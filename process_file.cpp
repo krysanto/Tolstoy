@@ -9,10 +9,12 @@
 #include <optional>
 #include <algorithm>
 #include <map>
+#include <ranges>
 
 using Chapter = std::vector<std::vector<std::string>>; // inner vector -> tokenized line
 using Tolstoy = std::vector<Chapter>;
 using Terms = std::map<std::string, bool>;
+using WordCount = std::map<std::string, size_t>;
 
 auto isNewChapter = [](const std::string &line)
 {
@@ -31,19 +33,69 @@ auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolst
 {
     return std::accumulate(lines.begin(), lines.end(), Tolstoy(), [&](Tolstoy acc, const std::string &line) -> Tolstoy
     {
-        if (isNewChapter(line)) 
+        if (isNewChapter(line))
         {
             Chapter newChapter;
             newChapter.push_back(tokenize(line)); // Start new chapter with tokenized line
             acc.push_back(newChapter);
-        } 
-        else if (!acc.empty()) 
+        }
+        else if (!acc.empty())
         {
             acc.back().push_back(tokenize(line)); // Tokenize line and add to current chapter
         }
 
-        return acc; 
+        return acc;
     });
+};
+
+auto filterTermsInChapter = [](const Chapter& chapter, const Terms& warTerms, const Terms& peaceTerms) -> Chapter
+{
+    Chapter filteredTerms(chapter.size());
+
+    std::transform(chapter.begin(), chapter.end(), filteredTerms.begin(), [&warTerms, &peaceTerms](const std::vector<std::string>& line)
+    {
+        std::vector<std::string> filteredLine;
+
+        std::copy_if(line.begin(), line.end(), std::back_inserter(filteredLine), [&warTerms, &peaceTerms](const std::string& word)
+        {
+            return warTerms.find(word) != warTerms.end() || peaceTerms.find(word) != peaceTerms.end();
+        });
+
+        return filteredLine;
+    });
+
+    filteredTerms.erase(
+        std::remove_if(filteredTerms.begin(), filteredTerms.end(), [](const std::vector<std::string>& line) {
+            return line.empty();
+        }), filteredTerms.end());
+
+    return filteredTerms;
+};
+
+auto countOccurrencesInChapter = [](const Chapter& filteredTerms) -> WordCount 
+{
+    return std::accumulate(filteredTerms.begin(), filteredTerms.end(), WordCount{}, [](WordCount acc, const std::vector<std::string>& line) 
+    {
+        std::for_each(line.begin(), line.end(), [&acc](const std::string& word) 
+        {
+            ++acc[word];
+        });
+            
+        return acc;
+    });
+};
+
+auto processChapters = [](const Tolstoy& book, const Terms& warTerms, const Terms& peaceTerms) -> std::vector<WordCount>
+{
+    std::vector<WordCount> chaptersWordCounts(book.size());
+
+    std::transform(book.begin(), book.end(), chaptersWordCounts.begin(), [&warTerms, &peaceTerms](const Chapter& chapter)
+    {
+        Chapter filteredTerms = filterTermsInChapter(chapter, warTerms, peaceTerms);
+        return countOccurrencesInChapter(filteredTerms);
+    });
+
+    return chaptersWordCounts;
 };
 
 auto processTerms = [](const std::vector<std::string> inputTerms)
