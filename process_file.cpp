@@ -111,6 +111,43 @@ auto processTerms = [](const std::vector<std::string> inputTerms)
     };
 };
 
+auto calculateTermDensity = [](const Chapter& chapter, const Terms& terms) -> double 
+{
+    // Flatten Chapter
+    std::vector<std::string> words = std::accumulate(chapter.begin(), chapter.end(), std::vector<std::string>{},
+        [](std::vector<std::string> acc, const std::vector<std::string>& lines) 
+        {
+            acc.insert(acc.end(), lines.begin(), lines.end());
+            return acc;
+        });
+
+    // Calculate distances
+    auto distances = std::accumulate(words.begin(), words.end(), std::pair<std::vector<size_t>, size_t>{{}, 0},
+        [&terms](std::pair<std::vector<size_t>, size_t> acc, const std::string& word) 
+        {
+            auto& [distances, lastPosition] = acc;
+            if (terms.find(word) != terms.end()) 
+            {
+                if (lastPosition > 0) 
+                {
+                    distances.push_back(lastPosition);
+                }
+                lastPosition = 0;
+            } 
+            else 
+            {
+                ++lastPosition;
+            }
+            return acc;
+        });
+
+    // Calculate average distance
+    double totalDistance = std::accumulate(distances.first.begin(), distances.first.end(), 0.0);
+    double averageDistance = distances.first.empty() ? 0.0 : totalDistance / distances.first.size();
+
+    return averageDistance;
+};
+
 auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>
 {
     std::ifstream file(fileName);

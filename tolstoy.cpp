@@ -34,16 +34,31 @@ int main()
 
     std::vector<WordCount> chaptersWordCounts = processChapters(tolstoy, war_map, peace_map);
 
+    int chapterNumber = 1;
+    for (const auto& chapter : tolstoy) 
+    {
+        double warDensity = calculateTermDensity(chapter, war_map);
+        double peaceDensity = calculateTermDensity(chapter, peace_map);
+
+        std::string chapterTheme = (warDensity > peaceDensity) ? "war-related" : "peace-related";
+
+        std::cout << "Chapter " << chapterNumber << ": " << chapterTheme << std::endl;
+
+        ++chapterNumber;
+    }
+
     // Print the word counts for each chapter
-    for (size_t chapterIndex = 0; chapterIndex < chaptersWordCounts.size(); ++chapterIndex) {
+    /*
+    for (size_t chapterIndex = 0; chapterIndex < chaptersWordCounts.size(); ++chapterIndex) 
+    {
         const auto& wordCount = chaptersWordCounts[chapterIndex];
         std::cout << "Word counts for Chapter " << (chapterIndex + 1) << ":\n";
-        for (const auto& [word, count] : wordCount) {
+        for (const auto& [word, count] : wordCount) 
+        {
             std::cout << "  " << word << ": " << count << '\n';
         }
     }
 
-/*
     for (const auto &chapter : tolstoy)
     {
         for (const auto &line : chapter)
