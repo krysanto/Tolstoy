@@ -76,10 +76,10 @@ auto filterTermsInChapter = [](const Chapter& chapter, const Terms& warTerms, co
         return filteredLine;
     });
 
-    filteredTerms.erase(
-        std::remove_if(filteredTerms.begin(), filteredTerms.end(), [](const std::vector<std::string>& line) {
-            return line.empty();
-        }), filteredTerms.end());
+    filteredTerms.erase(std::remove_if(filteredTerms.begin(), filteredTerms.end(), [](const std::vector<std::string>& line) 
+    {
+        return line.empty();
+    }), filteredTerms.end());
 
     return filteredTerms;
 };
@@ -125,48 +125,54 @@ auto processTerms = [](const std::vector<std::string> inputTerms)
 
 auto calculateTermDensity = [](const Chapter& chapter, const Terms& terms) -> double 
 {
-    // Flatten Chapter
-    std::vector<std::string> words = std::accumulate(chapter.begin(), chapter.end(), std::vector<std::string>{},
-        [](std::vector<std::string> acc, const std::vector<std::string>& lines) 
+    // Flatten the chapter into a single vector of words
+    std::vector<std::string> words;
+    std::for_each(chapter.begin(), chapter.end(), [&words](const std::vector<std::string>& lines) 
+    {
+        std::transform(lines.begin(), lines.end(), std::back_inserter(words), [](const std::string& word) 
         {
-            acc.insert(acc.end(), lines.begin(), lines.end());
-            return acc;
+            return word;
         });
+    });
 
-    // Calculate distances
-    auto distances = std::accumulate(words.begin(), words.end(), std::pair<std::vector<size_t>, size_t>{{}, 0},
-        [&terms](std::pair<std::vector<size_t>, size_t> acc, const std::string& word) 
-        {
-            auto& [distances, lastPosition] = acc;
-            if (terms.find(word) != terms.end()) 
-            {
-                if (lastPosition > 0) 
-                {
-                    distances.push_back(lastPosition);
-                }
-                lastPosition = 0;
-            } 
-            else 
-            {
-                ++lastPosition;
-            }
-            return acc;
-        });
-
-    // Calculate average distance
-    double totalDistance = std::accumulate(distances.first.begin(), distances.first.end(), 0.0);
-    double averageDistance = distances.first.empty() ? 0.0 : totalDistance / distances.first.size();
-
-    // Calculate term frequency
-    auto counts = std::count_if(words.begin(), words.end(), [&terms](const std::string& word) 
+    // Count occurrences of terms
+    size_t termOccurrences = std::count_if(words.begin(), words.end(), [&terms](const std::string& word) 
     {
         return terms.find(word) != terms.end();
     });
 
-    // Normalize average distance by term frequency
-    double termDensity = counts == 0 ? 0.0 : 1.0 / averageDistance;
+    // Calculate distances between terms
+    std::vector<size_t> distances;
+    size_t lastPosition = std::string::npos;
+    std::transform(words.begin(), words.end(), std::back_inserter(distances), [&lastPosition, &terms](const std::string& word) -> size_t 
+    {
+        if (terms.find(word) != terms.end()) 
+        {
+            size_t distance = lastPosition == std::string::npos ? 0 : lastPosition;
+            lastPosition = 0;
+            return distance;
+        } 
+        else 
+        {
+            ++lastPosition;
+            return 0;
+        }
+    });
 
-    return termDensity;
+    // Remove 0s from distances
+    distances.erase(std::remove(distances.begin(), distances.end(), 0), distances.end());
+
+    // Calculate average distance between terms
+    double averageDistance = distances.empty() ? 0.0 : std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+
+    // Density calculation
+    double density = termOccurrences;
+    if (averageDistance > 0.0) 
+    {
+        density /= averageDistance;
+    }
+
+    return density;
 };
 
 auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>
