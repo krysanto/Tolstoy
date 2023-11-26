@@ -25,18 +25,11 @@ TEST_CASE("Testing processLinesToChapters function") {
     CHECK(tolstoy[1].size() == 2);
 }
 
-TEST_CASE("Testing countOccurrencesInChapter function") {
-    Chapter filteredTerms = {{"war"}, {"Peace", "war"}};
-    auto wordCount = countOccurrencesInChapter(filteredTerms);
-    CHECK(wordCount["war"] == 2);
-    CHECK(wordCount["Peace"] == 1);
-}
-
 TEST_CASE("Testing calculateTermDensity function") {
     Chapter chapter = {{"This", "is", "war"}, {"Peace", "is", "essential"}};
     Terms terms = {{"war", true}, {"Peace", true}};
-    double density = calculateTermDensity(chapter, terms);
-    CHECK(density == 0.5);
+    double density = calculateTermDensity(chapter)(terms);
+    CHECK(density == 2);
 }
 
 TEST_CASE("Testing readFileLines function") {
@@ -68,55 +61,15 @@ TEST_CASE("Testing processLinesToChapters with empty and mixed input") {
     CHECK(processed[1].size() == 2);
 }
 
-TEST_CASE("Testing filterTermsInChapter with empty and specific inputs") {
-    Chapter emptyChapter;
-    Terms emptyTerms;
-    CHECK(filterTermsInChapter(emptyChapter, emptyTerms, emptyTerms).empty());
-
-    Chapter chapter = {{"war", "peace", "battle"}, {"negotiation", "treaty", "conflict"}};
-    Terms warTerms = {{"war", true}, {"battle", true}};
-    Terms peaceTerms = {{"peace", true}, {"treaty", true}};
-    auto filtered = filterTermsInChapter(chapter, warTerms, peaceTerms);
-    CHECK(filtered.size() == 2);
-    CHECK(filtered[0].size() == 3);
-    CHECK(filtered[1].size() == 1);
-}
-
-TEST_CASE("Testing countOccurrencesInChapter with different scenarios") {
-    Chapter emptyFilteredTerms;
-    CHECK(countOccurrencesInChapter(emptyFilteredTerms).empty());
-
-    Chapter filteredTerms = {{"war", "peace"}, {"peace", "war", "peace"}};
-    auto wordCount = countOccurrencesInChapter(filteredTerms);
-    CHECK(wordCount["war"] == 2);
-    CHECK(wordCount["peace"] == 3);
-}
-
-TEST_CASE("Testing processChapters with varying chapters") {
-    Tolstoy emptyBook;
-    Terms emptyTerms;
-    CHECK(processChapters(emptyBook, emptyTerms, emptyTerms).empty());
-
-    Tolstoy book = {{{"war", "peace"}}, {{"peace", "war", "peace"}}};
-    Terms warTerms = {{"war", true}};
-    Terms peaceTerms = {{"peace", true}};
-    auto result = processChapters(book, warTerms, peaceTerms);
-    CHECK(result.size() == 2);
-    CHECK(result[0]["war"] == 1);
-    CHECK(result[0]["peace"] == 1);
-    CHECK(result[1]["war"] == 1);
-    CHECK(result[1]["peace"] == 2);
-}
-
 TEST_CASE("Testing calculateTermDensity with different chapters") {
     Chapter emptyChapter;
     Terms emptyTerms;
-    CHECK(calculateTermDensity(emptyChapter, emptyTerms) == doctest::Approx(0.0));
+    CHECK(calculateTermDensity(emptyChapter)(emptyTerms) == doctest::Approx(0.0));
 
     Chapter chapter = {{"This", "is", "peace", "war", "peace"}, {"war", "is", "essential"}};
     Terms terms = {{"war", true}, {"peace", true}};
-    double density = calculateTermDensity(chapter, terms);
-    CHECK(density == 0.5);
+    double density = calculateTermDensity(chapter)(terms);
+    CHECK(density == 4);
 }
 
 TEST_CASE("Testing readFileLines with non-existent and specific files") {

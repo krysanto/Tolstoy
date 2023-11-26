@@ -60,56 +60,6 @@ auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolst
     });
 };
 
-auto filterTermsInChapter = [](const Chapter& chapter, const Terms& warTerms, const Terms& peaceTerms) -> Chapter
-{
-    Chapter filteredTerms(chapter.size());
-
-    std::transform(chapter.begin(), chapter.end(), filteredTerms.begin(), [&warTerms, &peaceTerms](const std::vector<std::string>& line)
-    {
-        std::vector<std::string> filteredLine;
-
-        std::copy_if(line.begin(), line.end(), std::back_inserter(filteredLine), [&warTerms, &peaceTerms](const std::string& word)
-        {
-            return warTerms.find(word) != warTerms.end() || peaceTerms.find(word) != peaceTerms.end();
-        });
-
-        return filteredLine;
-    });
-
-    filteredTerms.erase(std::remove_if(filteredTerms.begin(), filteredTerms.end(), [](const std::vector<std::string>& line) 
-    {
-        return line.empty();
-    }), filteredTerms.end());
-
-    return filteredTerms;
-};
-
-auto countOccurrencesInChapter = [](const Chapter& filteredTerms) -> WordCount 
-{
-    return std::accumulate(filteredTerms.begin(), filteredTerms.end(), WordCount{}, [](WordCount acc, const std::vector<std::string>& line) 
-    {
-        std::for_each(line.begin(), line.end(), [&acc](const std::string& word) 
-        {
-            ++acc[word];
-        });
-            
-        return acc;
-    });
-};
-
-auto processChapters = [](const Tolstoy& book, const Terms& warTerms, const Terms& peaceTerms) -> std::vector<WordCount>
-{
-    std::vector<WordCount> chaptersWordCounts(book.size());
-
-    std::transform(book.begin(), book.end(), chaptersWordCounts.begin(), [&warTerms, &peaceTerms](const Chapter& chapter)
-    {
-        Chapter filteredTerms = filterTermsInChapter(chapter, warTerms, peaceTerms);
-        return countOccurrencesInChapter(filteredTerms);
-    });
-
-    return chaptersWordCounts;
-};
-
 auto processTerms = [](const std::vector<std::string> inputTerms)
 {
     return [&inputTerms](const bool isWarTerm) -> Terms
@@ -123,10 +73,10 @@ auto processTerms = [](const std::vector<std::string> inputTerms)
     };
 };
 
-auto calculateTermDensity = [](const Chapter& chapter, const Terms& terms) -> double 
+auto flattenChapterToWords = [](const Chapter& chapter) -> std::vector<std::string>
 {
-    // Flatten the chapter into a single vector of words
     std::vector<std::string> words;
+
     std::for_each(chapter.begin(), chapter.end(), [&words](const std::vector<std::string>& lines) 
     {
         std::transform(lines.begin(), lines.end(), std::back_inserter(words), [](const std::string& word) 
@@ -135,44 +85,71 @@ auto calculateTermDensity = [](const Chapter& chapter, const Terms& terms) -> do
         });
     });
 
-    // Count occurrences of terms
-    size_t termOccurrences = std::count_if(words.begin(), words.end(), [&terms](const std::string& word) 
-    {
-        return terms.find(word) != terms.end();
-    });
+    return words;
+};
 
-    // Calculate distances between terms
-    std::vector<size_t> distances;
-    size_t lastPosition = std::string::npos;
-    std::transform(words.begin(), words.end(), std::back_inserter(distances), [&lastPosition, &terms](const std::string& word) -> size_t 
+auto countOccurrences = [](const std::vector<std::string>& words)
+{
+    return [&words](const Terms& terms) -> size_t
     {
-        if (terms.find(word) != terms.end()) 
+        size_t termOccurrences = std::count_if(words.begin(), words.end(), [&terms](const std::string& word) 
         {
-            size_t distance = lastPosition == std::string::npos ? 0 : lastPosition;
-            lastPosition = 0;
-            return distance;
-        } 
-        else 
+            return terms.find(word) != terms.end();
+        });
+
+        return termOccurrences;
+    };
+};
+
+auto calculateDistanceBetweenTerms = [](const std::vector<std::string>& words)
+{
+    return [&words](const Terms& terms) -> std::vector<size_t>
+    {
+        std::vector<size_t> distances;
+        size_t lastPosition = std::string::npos;
+        std::transform(words.begin(), words.end(), std::back_inserter(distances), [&lastPosition, &terms](const std::string& word) -> size_t 
         {
-            ++lastPosition;
-            return 0;
+            if (terms.find(word) != terms.end()) 
+            {
+                size_t distance = lastPosition == std::string::npos ? 0 : lastPosition;
+                lastPosition = 0;
+                return distance;
+            } 
+            else 
+            {
+                ++lastPosition;
+                return 0;
+            }
+        });
+
+        // Remove 0s from distances
+        distances.erase(std::remove(distances.begin(), distances.end(), 0), distances.end());
+
+        return distances;
+    };
+};
+
+auto calculateTermDensity = [](const Chapter& chapter)
+{
+    return [&chapter](const Terms& terms) -> double 
+    {
+        std::vector<std::string> words = flattenChapterToWords(chapter);
+        size_t termOccurrences = countOccurrences(words)(terms);
+        std::vector<size_t> distances = calculateDistanceBetweenTerms(words)(terms);
+
+        // Calculate average distance between terms
+        double averageDistance = distances.empty() ? 0.0 : std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+
+        // Density calculation
+        double density = termOccurrences;
+        
+        if (averageDistance > 0.0) 
+        {
+            density /= averageDistance;
         }
-    });
 
-    // Remove 0s from distances
-    distances.erase(std::remove(distances.begin(), distances.end(), 0), distances.end());
-
-    // Calculate average distance between terms
-    double averageDistance = distances.empty() ? 0.0 : std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
-
-    // Density calculation
-    double density = termOccurrences;
-    if (averageDistance > 0.0) 
-    {
-        density /= averageDistance;
-    }
-
-    return density;
+        return density;
+    };
 };
 
 auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>

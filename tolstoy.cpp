@@ -6,14 +6,18 @@
 #include <ranges>
 #include "process_file.cpp"
 
-auto filterWords = [](const Chapter currentChapter)
-{
-    return [&currentChapter]()
-    {
+using Chapter = std::vector<std::vector<std::string>>; // inner vector -> tokenized line
+using Tolstoy = std::vector<Chapter>;
+using Terms = std::map<std::string, bool>;
+using WordCount = std::map<std::string, size_t>;
 
+auto printChapterTheme = [](int chapterNumber) 
+{
+    return [chapterNumber](const std::string& theme) -> void
+    {
+        std::cout << "Chapter " << chapterNumber << ": " << theme << std::endl;
     };
 };
-
 
 int main()
 {
@@ -32,53 +36,18 @@ int main()
     Terms peace_map = processTerms(peace.value())(false);
     Terms war_map = processTerms(war.value())(true);
 
-    std::vector<WordCount> chaptersWordCounts = processChapters(tolstoy, war_map, peace_map);
-
     int chapterNumber = 1;
-    for (const auto& chapter : tolstoy) 
+    std::for_each(tolstoy.begin(), tolstoy.end(), [&chapterNumber, &war_map, &peace_map](const auto& chapter) 
     {
-        double warDensity = calculateTermDensity(chapter, war_map);
-        double peaceDensity = calculateTermDensity(chapter, peace_map);
+        double warDensity = calculateTermDensity(chapter)(war_map);
+        double peaceDensity = calculateTermDensity(chapter)(peace_map);
 
         std::string chapterTheme = (warDensity > peaceDensity) ? "war-related" : "peace-related";
 
-        std::cout << "Chapter " << chapterNumber << ": " << chapterTheme << std::endl;
+        printChapterTheme(chapterNumber)(chapterTheme);
 
         ++chapterNumber;
-    }
+    });
 
-    // Print the word counts for each chapter
-    /*
-    for (size_t chapterIndex = 0; chapterIndex < chaptersWordCounts.size(); ++chapterIndex) 
-    {
-        const auto& wordCount = chaptersWordCounts[chapterIndex];
-        std::cout << "Word counts for Chapter " << (chapterIndex + 1) << ":\n";
-        for (const auto& [word, count] : wordCount) 
-        {
-            std::cout << "  " << word << ": " << count << '\n';
-        }
-    }
-
-    for (const auto &chapter : tolstoy)
-    {
-        for (const auto &line : chapter)
-        {
-            for (const auto &word : line)
-            {
-                std::cout << word << ' ';
-            }
-            std::cout << std::endl;
-        }
-    }
-
-    for (auto &[k, v] : peace_map){
-        std::cout << k << "   " << v << std::endl;
-    }
-
-    for (auto &[k, v] : war_map){
-        std::cout << k << "   " << v << std::endl;
-    }
-*/
     return 0;
 }
-
