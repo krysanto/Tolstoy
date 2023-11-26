@@ -21,12 +21,24 @@ auto isNewChapter = [](const std::string &line)
     return line.rfind("CHAPTER", 0) == 0;
 };
 
-auto tokenize = [](const std::string &str) -> std::vector<std::string>
+auto tokenize = [](const std::string &str) -> std::vector<std::string> 
 {
     std::istringstream iss(str);
-    std::vector<std::string> tokens{std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{}};
+    std::vector<std::string> rawTokens{std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{}};
 
-    return tokens;
+    // Remove punctuation
+    std::transform(rawTokens.begin(), rawTokens.end(), rawTokens.begin(), [](const std::string &token) 
+    {
+        std::string cleanToken;
+        std::copy_if(token.begin(), token.end(), std::back_inserter(cleanToken), [](char c) { return std::isalpha(c) || c == '\''; });
+        return cleanToken;
+    });
+
+    // Remove empty tokens
+    auto it = std::remove_if(rawTokens.begin(), rawTokens.end(), [](const std::string &token) { return token.empty(); });
+    rawTokens.erase(it, rawTokens.end());
+
+    return rawTokens;
 };
 
 auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolstoy
@@ -146,10 +158,10 @@ auto calculateTermDensity = [](const Chapter& chapter, const Terms& terms) -> do
     double averageDistance = distances.first.empty() ? 0.0 : totalDistance / distances.first.size();
 
     // Calculate term frequency
-    auto counts = std::count_if(words.begin(), words.end(),
-        [&terms](const std::string& word) {
-            return terms.find(word) != terms.end();
-        });
+    auto counts = std::count_if(words.begin(), words.end(), [&terms](const std::string& word) 
+    {
+        return terms.find(word) != terms.end();
+    });
 
     // Normalize average distance by term frequency
     double termDensity = counts == 0 ? 0.0 : 1.0 / averageDistance;
