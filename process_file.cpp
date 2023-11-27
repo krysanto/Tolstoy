@@ -15,28 +15,32 @@
 using Chapter = std::vector<std::vector<std::string>>; // inner vector -> tokenized line
 using Tolstoy = std::vector<Chapter>;
 using Terms = std::map<std::string, bool>;
-using WordCount = std::map<std::string, size_t>;
 
 auto isNewChapter = [](const std::string &line)
 {
     return line.rfind("CHAPTER", 0) == 0;
 };
 
+auto readTokensIO = [](std::istringstream& stream) -> std::vector<std::string> 
+{
+    return std::vector<std::string>{std::istream_iterator<std::string>{stream}, std::istream_iterator<std::string>{}};
+};
+
 auto tokenize = [](const std::string &str) -> std::vector<std::string> 
 {
     std::istringstream iss(str);
-    std::vector<std::string> rawTokens{std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{}};
+    std::vector<std::string> rawTokens = readTokensIO(iss);
 
     // Remove punctuation
-    std::transform(rawTokens.begin(), rawTokens.end(), rawTokens.begin(), [](const std::string &token) 
+    std::transform(rawTokens.begin(), rawTokens.end(), rawTokens.begin(), [](const std::string& token) 
     {
         std::string cleanToken;
-        std::copy_if(token.begin(), token.end(), std::back_inserter(cleanToken), [](char c) { return std::isalpha(c) || c == '\''; });
+        std::copy_if(token.begin(), token.end(), std::back_inserter(cleanToken), [](const char& c) { return std::isalpha(c) || c == '\''; });
         return cleanToken;
     });
 
     // Remove empty tokens
-    auto it = std::remove_if(rawTokens.begin(), rawTokens.end(), [](const std::string &token) { return token.empty(); });
+    auto it = std::remove_if(rawTokens.begin(), rawTokens.end(), [](const std::string& token) { return token.empty(); });
     rawTokens.erase(it, rawTokens.end());
 
     return rawTokens;
@@ -44,7 +48,7 @@ auto tokenize = [](const std::string &str) -> std::vector<std::string>
 
 auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolstoy
 {
-    return std::accumulate(lines.begin(), lines.end(), Tolstoy(), [&](Tolstoy acc, const std::string &line) -> Tolstoy
+    return std::accumulate(lines.begin(), lines.end(), Tolstoy(), [&](Tolstoy acc, const std::string& line) -> Tolstoy
     {
         if (isNewChapter(line))
         {
@@ -63,13 +67,15 @@ auto processLinesToChapters = [](const std::vector<std::string> &lines) -> Tolst
 
 auto processTerms = [](const std::vector<std::string> inputTerms)
 {
-    return [&inputTerms](const bool isWarTerm) -> Terms
+    return [&inputTerms](const bool& isWarTerm) -> Terms
     {
-        return std::accumulate(inputTerms.begin(), inputTerms.end(), Terms(), [&] (Terms acc, const std::string inputTerm) -> Terms
+        return std::accumulate(inputTerms.begin(), inputTerms.end(), Terms(), [&](const Terms& acc, const std::string& inputTerm) -> Terms
         {
-            acc.insert({inputTerm, isWarTerm});
+            Terms copy_acc = acc;
 
-            return acc;
+            copy_acc.insert({inputTerm, isWarTerm});
+
+            return copy_acc;
         });
     };
 };
@@ -153,6 +159,13 @@ auto calculateTermDensity = [](const Chapter& chapter)
     };
 };
 
+auto readFileIO = [](std::ifstream& file) -> std::vector<std::string>
+{
+   std::vector<std::string> lines;
+   std::copy(std::istream_iterator<std::string>(file), std::istream_iterator<std::string>(), std::back_inserter(lines));
+   return lines;
+};
+
 auto readFileLines = [](const std::string &fileName) -> std::optional<std::vector<std::string>>
 {
     std::ifstream file(fileName);
@@ -161,10 +174,9 @@ auto readFileLines = [](const std::string &fileName) -> std::optional<std::vecto
         return std::nullopt;
     }
 
-    std::vector<std::string> lines;
-    std::copy(std::istream_iterator<std::string>(file), std::istream_iterator<std::string>(), std::back_inserter(lines));
+    std::vector<std::string> lines = readFileIO(file);
 
-    auto end_marker = std::find_if(lines.begin(), lines.end(), [](const std::string &line)
+    auto end_marker = std::find_if(lines.begin(), lines.end(), [](const std::string& line)
     {
         return line.find("END") != std::string::npos;
     });

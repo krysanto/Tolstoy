@@ -6,12 +6,7 @@
 #include <ranges>
 #include "process_file.cpp"
 
-using Chapter = std::vector<std::vector<std::string>>; // inner vector -> tokenized line
-using Tolstoy = std::vector<Chapter>;
-using Terms = std::map<std::string, bool>;
-using WordCount = std::map<std::string, size_t>;
-
-auto printChapterTheme = [](int chapterNumber) 
+auto printChapterTheme = [](const int chapterNumber) 
 {
     return [chapterNumber](const std::string& theme) -> void
     {
@@ -23,13 +18,9 @@ int main()
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-    
-    
-
     std::optional<std::vector<std::string>> lines = readFileLines("war_and_peace.txt");
     std::optional<std::vector<std::string>> peace = readFileLines("peace_terms.txt");
     std::optional<std::vector<std::string>> war = readFileLines("war_terms.txt");
-
 
     if (!lines.has_value() || !peace.has_value() || !war.has_value())
     {
