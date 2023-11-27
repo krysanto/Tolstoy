@@ -10,7 +10,7 @@ auto printChapterTheme = [](const int chapterNumber)
 {
     return [chapterNumber](const std::string& theme) -> void
     {
-        std::cout << "Chapter " << chapterNumber << ": " << theme << std::endl;
+        std::cout << "Chapter " << chapterNumber << ": " << theme << "\n";
     };
 };
 
@@ -24,7 +24,7 @@ int main()
 
     if (!lines.has_value() || !peace.has_value() || !war.has_value())
     {
-        std::cerr << "One or more files could not be opened or read." << std::endl;
+        std::cerr << "One or more files could not be opened or read." << "\n";
         return 1;
     }
 
