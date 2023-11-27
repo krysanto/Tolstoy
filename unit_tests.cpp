@@ -79,3 +79,80 @@ TEST_CASE("Testing readFileLines with non-existent and specific files") {
     CHECK(lines.has_value());
     CHECK(lines->size() == 562448);
 }
+
+TEST_CASE("Testing isNewChapter with edge cases") {
+    CHECK(isNewChapter("CHAPTER") == true);
+    CHECK(isNewChapter("chapter 1: A New Start") == false);
+    CHECK(isNewChapter("CHAPTER1: A New Start") == true);
+    CHECK(isNewChapter(" CHAPTER 1: A New Start") == false);
+}
+
+TEST_CASE("Testing tokenize with punctuation and edge cases") {
+    CHECK(tokenize("This, is a test.") == std::vector<std::string>{"This", "is", "a", "test"});
+    CHECK(tokenize("Word-with-hyphen") == std::vector<std::string>{"Wordwithhyphen"});
+    CHECK(tokenize("1234 5678") == std::vector<std::string>{});
+    CHECK(tokenize("Mixed1234Content") == std::vector<std::string>{"MixedContent"});
+}
+
+TEST_CASE("Testing processLinesToChapters with chapters having no content") {
+    std::vector<std::string> linesWithEmptyChapters = {"CHAPTER 1", "CHAPTER 2", "CHAPTER 3"};
+    auto tolstoy = processLinesToChapters(linesWithEmptyChapters);
+    CHECK(tolstoy.size() == 3);
+    CHECK(tolstoy[0][0][0].compare("CHAPTER "));
+    CHECK(tolstoy[1][0][0].compare("CHAPTER "));
+    CHECK(tolstoy[2][0][0].compare("CHAPTER "));
+}
+
+TEST_CASE("Testing calculateTermDensity with repetitive terms") {
+    Chapter chapter = {{"war", "war", "war"}, {"peace", "peace", "peace"}};
+    Terms terms = {{"war", true}, {"peace", true}};
+    double density = calculateTermDensity(chapter)(terms);
+    CHECK(density == doctest::Approx(6.0));
+}
+
+TEST_CASE("Testing readFileLines with various file contents") {
+    auto emptyFileLines = readFileLines("empty_file.txt");
+    CHECK(emptyFileLines.has_value());
+    CHECK(emptyFileLines->empty());
+
+    auto singleLineFileLines = readFileLines("single_line_file.txt");
+    CHECK(singleLineFileLines.has_value());
+    CHECK(singleLineFileLines->size() == 1);
+}
+
+TEST_CASE("Error handling in readFileLines with invalid file path") {
+    auto result = readFileLines("invalid_path.txt");
+    CHECK_FALSE(result.has_value());
+}
+
+TEST_CASE("Error handling in processLinesToChapters with invalid input format") {
+    std::vector<std::string> invalidInput = {"Invalid", "Input", "Format"};
+    auto error = processLinesToChapters(invalidInput);
+    CHECK(error.empty());
+}
+
+TEST_CASE("Performance testing for processLinesToChapters with large input") {
+    std::vector<std::string> largeInput(1000000, "CHAPTER 1000000: Large Input Test");
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    auto result = processLinesToChapters(largeInput);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "Elapsed time: " << elapsed.count() << " s\n";
+    CHECK(result.size() == 1000000);
+}
+
+TEST_CASE("Boundary condition in tokenize with extremely long strings") {
+    std::string longString(10000, 'a');
+    auto result = tokenize(longString);
+    CHECK(result.size() == 1);
+    CHECK(result[0].length() == 10000);
+}
+
+TEST_CASE("Boundary condition in processLinesToChapters with empty lines") {
+    std::vector<std::string> emptyLines(1000);
+    auto result = processLinesToChapters(emptyLines);
+    CHECK(result.empty());
+}
+

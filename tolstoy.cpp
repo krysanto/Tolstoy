@@ -21,6 +21,11 @@ auto printChapterTheme = [](int chapterNumber)
 
 int main()
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    
+    
+
     std::optional<std::vector<std::string>> lines = readFileLines("war_and_peace.txt");
     std::optional<std::vector<std::string>> peace = readFileLines("peace_terms.txt");
     std::optional<std::vector<std::string>> war = readFileLines("war_terms.txt");
@@ -48,6 +53,11 @@ int main()
 
         ++chapterNumber;
     });
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+
+    std::cout << "Elapsed time for processing War and Peace: " << elapsed.count() << " s\n";
 
     return 0;
 }
