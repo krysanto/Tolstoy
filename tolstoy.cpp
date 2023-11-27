@@ -14,6 +14,11 @@ auto printChapterTheme = [](const int chapterNumber)
     };
 };
 
+auto printErrorMessage = [](const std::string& message) -> void
+{
+    std::cerr << message << "\n";
+};
+
 int main()
 {
     auto start = std::chrono::high_resolution_clock::now();
@@ -24,7 +29,7 @@ int main()
 
     if (!lines.has_value() || !peace.has_value() || !war.has_value())
     {
-        std::cerr << "One or more files could not be opened or read." << "\n";
+        printErrorMessage("One or more files could not be opened or read.");
         return 1;
     }
 
